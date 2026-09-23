@@ -1,4 +1,4 @@
-🚀 Automated Data Quality Pipeline & Executive Reporting Engine
+🚀  Automated Data Quality Pipeline & Executive Reporting Engine 
 👥 Target Audience
 For HR / Recruiters: Demonstrates the ability to transform programming code into real business solutions, automating repetitive tasks and delivering executive-ready outputs.
 
@@ -17,16 +17,26 @@ In data analytics, raw data is frequently contaminated with duplicates, garbage 
 This script fully automates Data Quality Assurance, ensuring a reliable dataset and generating a technical audit report in seconds.
 
 Map of the project
+
 /
 ├── code/
+
 │   └── Data_cleaning_code                 # All the code of the project in python
+
 │   
+
 ├── Data base/
+
 │   └── Raw      
+
 │       └── Data-Online_retail             # Raw data base
+
 ├── Project solution/
+
 │   ├── online_retail_cleaned        # Data base clean, update and ready to use
+
 │   └── Data_Cleaning_Report.docs    # document of documentation of the changes, adds and cleaning of the data base 
+
 └── README.md                        # Explanation of the project
 
 🧱 Architecture & Code Blocks
