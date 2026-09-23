@@ -1,0 +1,376 @@
+from tkinter import Tk, filedialog
+import docx
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt, RGBColor
+import numpy as np
+import pandas as pd
+
+
+def set_run_font(run, size_pt, bold=False):
+  # Helper to keep typography clean and strictly black
+  run.font.name = "Times New Roman"
+  run.font.size = Pt(size_pt)
+  run.bold = bold
+  run.font.color.rgb = RGBColor(0, 0, 0)
+
+
+def generate_error_report(metrics):
+  doc = docx.Document()
+
+  # Set 1-inch margins around the page
+  for section in doc.sections:
+    section.top_margin = Inches(1)
+    section.bottom_margin = Inches(1)
+    section.left_margin = Inches(1)
+    section.right_margin = Inches(1)
+
+  # Report Main Title (Times New Roman, 14pt, Bold)
+  title = doc.add_paragraph()
+  title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+  run_title = title.add_run("Data Audit, Cleaning and Transformation Report")
+  set_run_font(run_title, 14, bold=True)
+
+  # Section 1: Executive Summary
+  sub1 = doc.add_paragraph()
+  sub1.paragraph_format.space_before = Pt(10)
+  sub1.paragraph_format.space_after = Pt(5)
+  run_sub1 = sub1.add_run("1. General Dataset Summary")
+  set_run_font(run_sub1, 14, bold=True)
+
+  info = doc.add_paragraph()
+  info.paragraph_format.space_after = Pt(10)
+  info.add_run(
+      f"• Initial total records (rows): {metrics['initial_rows']:,}\n"
+  )
+  info.add_run(f"• Cleaned records (rows): {metrics['final_rows']:,}\n")
+  info.add_run(
+      f"• Total filtered/modified records: {metrics['total_modified']:,}\n"
+  )
+  info.add_run(
+      "• Status: Fully audited, type-error quantities corrected to positive,"
+      " clean financial amounts, and enriched for analytics."
+  )
+  for run in info.runs:
+    set_run_font(run, 10)
+
+  # Section 2: Errors and Fixes Log Table
+  sub2 = doc.add_paragraph()
+  sub2.paragraph_format.space_before = Pt(10)
+  sub2.paragraph_format.space_after = Pt(5)
+  run_sub2 = sub2.add_run("2. Detailed Log of Errors and Fixes")
+  set_run_font(run_sub2, 14, bold=True)
+
+  table1 = doc.add_table(rows=1, cols=5)
+  table1.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+  header_cells1 = table1.rows[0].cells
+  column_titles1 = ["#", "Table", "Column", "Error Description", "Action Taken"]
+  for i, text in enumerate(column_titles1):
+    header_cells1[i].text = text
+    for p in header_cells1[i].paragraphs:
+      p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+      for r in p.runs:
+        set_run_font(r, 10, bold=True)
+
+  error_details = [
+      (
+          "1",
+          "Online Retail",
+          "General",
+          (
+              f"Duplication: Found {metrics['duplicates']:,} identical"
+              " duplicate rows."
+          ),
+          "Dropped duplicate lines to prevent artificial sales inflation.",
+      ),
+      (
+          "2",
+          "Online Retail",
+          "Quantity",
+          (
+              f"Typing Errors: Detected {metrics['negative_quantities_fixed']:,}"
+              " rows with negative quantities due to data-entry mistakes."
+          ),
+          (
+              "Converted negative quantities into positive values using"
+              " absolute value to preserve sales volume."
+          ),
+      ),
+      (
+          "3",
+          "Online Retail",
+          "Description",
+          (
+              f"Garbage data: {metrics['null_desc']:,} blank cells or corrupt"
+              " symbols ('?' / '??')."
+          ),
+          "Standardized invalid text entries into 'UNKNOWN'.",
+      ),
+      (
+          "4",
+          "Online Retail",
+          "CustomerID",
+          (
+              f"Missing IDs: {metrics['null_customer']:,} rows without a client"
+              " ID."
+          ),
+          "Replaced missing customer identifiers with 'N/D' (No Disponible).",
+      ),
+      (
+          "5",
+          "Online Retail",
+          "UnitPrice",
+          (
+              f"Invalid pricing: {metrics['invalid_prices']:,} rows with prices"
+              " <= 0."
+          ),
+          "Filtered out non-commercial records.",
+      ),
+      (
+          "6",
+          "Online Retail",
+          "Quantity / UnitPrice",
+          (
+              f"Statistical Outliers: {metrics['outliers']:,} rows beyond"
+              " Interquartile Range (IQR)."
+          ),
+          "Removed extreme values and typing errors.",
+      ),
+  ]
+
+  for row_data in error_details:
+    row_cells = table1.add_row().cells
+    for i, val in enumerate(row_data):
+      row_cells[i].text = val
+      for p in row_cells[i].paragraphs:
+        for r in p.runs:
+          set_run_font(r, 10)
+
+  # Section 3: New Columns and Enrichments Table
+  sub3 = doc.add_paragraph()
+  sub3.paragraph_format.space_before = Pt(15)
+  sub3.paragraph_format.space_after = Pt(5)
+  run_sub3 = sub3.add_run("3. Explanation of New Columns and Data Enrichments")
+  set_run_font(run_sub3, 14, bold=True)
+
+  table2 = doc.add_table(rows=1, cols=4)
+  table2.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+  header_cells2 = table2.rows[0].cells
+  column_titles2 = [
+      "New Column",
+      "Source / Logic",
+      "Sigla / Classification Details",
+      "Business Purpose",
+  ]
+  for i, text in enumerate(column_titles2):
+    header_cells2[i].text = text
+    for p in header_cells2[i].paragraphs:
+      p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+      for r in p.runs:
+        set_run_font(r, 10, bold=True)
+
+  transformation_details = [
+      (
+          "IsProduct",
+          "StockCode validation check",
+          (
+              "Tags physical items as True versus administrative fees (POST, M,"
+              " D, DOT, BANK CHARGES) as False."
+          ),
+          (
+              "Enables clean inventory and unit-sales analysis without delivery"
+              " charges skewing metrics."
+          ),
+      ),
+      (
+          "YearMonth",
+          "InvoiceDate formatting",
+          "Converts timestamps into a standard 'YYYY-MM' period string.",
+          "Simplifies time-series analysis and monthly trend dashboards.",
+      ),
+      (
+          "Month / DayOfWeek / Hour",
+          "InvoiceDate extraction",
+          (
+              "Pulls out calendar month name, weekday name, and transaction"
+              " hour."
+          ),
+          (
+              "Provides deep behavioral visibility into customer shopping"
+              " patterns."
+          ),
+      ),
+      (
+          "TotalAmount",
+          "Quantity multiplied by UnitPrice (rounded to 2 decimals)",
+          (
+              "Computes precise monetary value per line item with clean decimal"
+              " formatting."
+          ),
+          (
+              "Acts as the primary revenue metric for overall sales performance"
+              " evaluation."
+          ),
+      ),
+  ]
+
+  for row_data in transformation_details:
+    row_cells = table2.add_row().cells
+    for i, val in enumerate(row_data):
+      row_cells[i].text = val
+      for p in row_cells[i].paragraphs:
+        for r in p.runs:
+          set_run_font(r, 10)
+
+  doc.save("Data_Cleaning_Report.docx")
+
+
+def main():
+  # Open file dialog window and force it to the front
+  root = Tk()
+  root.withdraw()
+  root.attributes("-topmost", True)
+
+  print("Please select your dataset file (CSV or Excel)...")
+  file_path = filedialog.askopenfilename(
+      title="Select dataset",
+      filetypes=[
+          ("Data files", "*.csv;*.xlsx;*.xls"),
+          ("CSV files", "*.csv"),
+          ("Excel files", "*.xlsx;*.xls"),
+          ("All files", "*.*"),
+      ],
+  )
+
+  if not file_path:
+    print(
+        "Action cancelled. No file was selected or the selection window was"
+        " closed."
+    )
+    return
+
+  print(f"Dataset successfully loaded from: {file_path}")
+
+  try:
+    print("Running data cleaning and transformation pipeline...")
+
+    # Load dataset depending on extension
+    if file_path.endswith(".csv"):
+      df = pd.read_csv(file_path, encoding="ISO-8859-1")
+    else:
+      df = pd.read_excel(file_path)
+
+    initial_total = len(df)
+    metrics = {"initial_rows": initial_total}
+
+    # STEP 1: Remove exact duplicate rows
+    clean_df = df.drop_duplicates()
+    metrics["duplicates"] = initial_total - len(clean_df)
+    df = clean_df
+
+    # STEP 2: Standardize general text formatting and whitespace
+    text_cols = ["Description", "Country", "InvoiceNo", "StockCode"]
+    for col in text_cols:
+      if col in df.columns:
+        df[col] = df[col].astype(str).str.strip()
+
+    df["StockCode"] = df["StockCode"].str.upper()
+    df["Description"] = df["Description"].str.replace(r"\s+", " ", regex=True)
+    df["Description"] = df["Description"].str.title()
+
+    # STEP 3: Clean up nulls, empty spaces, and garbage text like '?' or '??'
+    garbage_values = ["Nan", "", "None", "Nat", "?", "??", "???"]
+    metrics["null_desc"] = (
+        df["Description"].isin(garbage_values)
+        | df["Description"].isna()
+        | (df["Description"] == "")
+    ).sum()
+    df["Description"] = df["Description"].replace(garbage_values, "UNKNOWN")
+    df["Description"] = df["Description"].fillna("UNKNOWN")
+
+    # STEP 4: Separate true products from administrative fees or postage codes
+    non_product_codes = [
+        "POST",
+        "DOT",
+        "M",
+        "D",
+        "AMAZONFEE",
+        "BANK CHARGES",
+        "CRUK",
+        "PADS",
+    ]
+    df["IsProduct"] = ~df["StockCode"].isin(non_product_codes)
+
+    # STEP 5: Handle missing customer IDs by labeling them as 'N/D'
+    if "CustomerID" in df.columns:
+      metrics["null_customer"] = df["CustomerID"].isna().sum()
+      df["CustomerID"] = df["CustomerID"].fillna("N/D")
+      df["CustomerID"] = df["CustomerID"].apply(
+          lambda x: str(int(float(x)))
+          if str(x).replace(".", "", 1).isdigit()
+          else str(x)
+      )
+    else:
+      metrics["null_customer"] = 0
+
+    # STEP 6: Parse dates and extract temporal components for analysis
+    df["InvoiceDate"] = pd.to_datetime(df["InvoiceDate"], errors="coerce")
+    df = df.dropna(subset=["InvoiceDate"])
+    df["YearMonth"] = df["InvoiceDate"].dt.to_period("M").astype(str)
+    df["Month"] = df["InvoiceDate"].dt.month_name()
+    df["DayOfWeek"] = df["InvoiceDate"].dt.day_name()
+    df["Hour"] = df["InvoiceDate"].dt.hour
+
+    # STEP 7: Ensure numeric format for quantities and unit prices
+    df["Quantity"] = pd.to_numeric(df["Quantity"], errors="coerce")
+    df["UnitPrice"] = pd.to_numeric(df["UnitPrice"], errors="coerce")
+    df = df.dropna(subset=["Quantity", "UnitPrice"])
+
+    # STEP 8: Fix typing errors where quantities were recorded as negative by taking absolute value
+    metrics["negative_quantities_fixed"] = (df["Quantity"] < 0).sum()
+    df["Quantity"] = df["Quantity"].abs()
+
+    # STEP 9: Remove non-commercial prices (less than or equal to zero)
+    metrics["invalid_prices"] = (df["UnitPrice"] <= 0).sum()
+    df = df[df["UnitPrice"] > 0]
+
+    # STEP 10: Filter extreme statistical outliers using the IQR method
+    rows_before_iqr = len(df)
+    for col in ["Quantity", "UnitPrice"]:
+      analysis_series = df[col]
+      q1 = analysis_series.quantile(0.25)
+      q3 = analysis_series.quantile(0.75)
+      iqr_range = q3 - q1
+      lower_limit = q1 - 1.5 * iqr_range
+      upper_limit = q3 + 1.5 * iqr_range
+      df = df[
+          (analysis_series >= lower_limit) & (analysis_series <= upper_limit)
+      ]
+    metrics["outliers"] = rows_before_iqr - len(df)
+
+    # STEP 11: Calculate total monetary amount per transaction row with exactly 2 decimals
+    df["TotalAmount"] = (df["Quantity"] * df["UnitPrice"]).round(2)
+    df["TotalAmount"] = pd.to_numeric(df["TotalAmount"])
+
+    metrics["final_rows"] = len(df)
+    metrics["total_modified"] = metrics["initial_rows"] - metrics["final_rows"]
+
+    print(f"Pipeline finished! Final dataset dimensions: {df.shape}")
+
+    # Save cleaned data into a new CSV file
+    output_file = "online_retail_cleaned.csv"
+    df.to_csv(output_file, index=False)
+    print(f"Cleaned dataset saved as: '{output_file}'")
+
+    print("Generating official Word audit report document...")
+    generate_error_report(metrics)
+    print("Report successfully saved as 'Data_Cleaning_Report.docx'!")
+
+  except Exception as error:
+    print(f"An unexpected error occurred during execution: {error}")
+
+
+if __name__ == "__main__":
+  main()
