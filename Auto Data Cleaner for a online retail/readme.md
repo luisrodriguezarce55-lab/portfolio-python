@@ -20,9 +20,7 @@ In data analytics, raw data is frequently contaminated with duplicates, garbage 
 
 This script fully automates Data Quality Assurance, ensuring a reliable dataset and generating a technical audit report in seconds.
 
-**Map of the project**
-
-/
+**Map of the project/**
 ├── code/
 
 │   └── Data_cleaning_code                 # All the code of the project in python
