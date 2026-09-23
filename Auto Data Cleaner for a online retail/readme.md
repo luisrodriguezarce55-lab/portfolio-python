@@ -1,11 +1,13 @@
 🚀  **Automated Data Quality Pipeline & Executive Reporting Engine**
 
 👥 **Target Audience**
+
 For HR / Recruiters: Demonstrates the ability to transform programming code into real business solutions, automating repetitive tasks and delivering executive-ready outputs.
 
 For Technical Leads / Data Leads: Evidences solid data engineering skills using pandas, statistical anomaly handling, schema validation, and automated formal documentation generation (python-docx).
 
 📦 **What Do You Get at the End?**
+
 When running this pipeline, the system automatically outputs two professional deliverables:
 
 A Clean Database (.csv): A fully audited, deduplicated, and enriched dataset ready for advanced analytics and machine learning.
@@ -13,6 +15,7 @@ A Clean Database (.csv): A fully audited, deduplicated, and enriched dataset rea
 An Executive Audit Report (.docx): A professionally formatted Word document detailing every error found, metrics corrected, and new variable created.
 
 🎯 **The Business Problem**
+
 In data analytics, raw data is frequently contaminated with duplicates, garbage entries, typing errors, and extreme values. Analyzing uncleaned data leads to flawed financial metrics and poor strategic decisions.
 
 This script fully automates Data Quality Assurance, ensuring a reliable dataset and generating a technical audit report in seconds.
@@ -41,6 +44,7 @@ This script fully automates Data Quality Assurance, ensuring a reliable dataset 
 └── README.md                        # Explanation of the project
 
 🧱 **Architecture & Code Blocks**
+
 The script is designed under a modular approach, clearly separating the user interface, logical processing, and presentation layers:
 
 1. Graphical User Interface (Tkinter)
@@ -60,6 +64,7 @@ Data Typing & Corrections: Safely casts data types, correcting negative quantiti
 Outlier Filtering (IQR): Utilizes the Interquartile Range (IQR) method to detect and filter statistically extreme values in prices and quantities, protecting the analysis from severe skews.
 
 🧠 **Feature Engineering: Boosting Business Logic & Future Analysis**
+
 Beyond just cleaning errors, the pipeline introduces strategic data enrichment. By creating targeted new columns, it unlocks deeper business insights and prepares the data for advanced forecasting or dashboarding:
 
 IsProduct: Separates physical inventory sales from administrative fees (like shipping, postage, or bank charges), ensuring financial metrics and unit-sales calculations aren't skewed.
@@ -76,6 +81,7 @@ The detailed log of errors found versus the corrective actions applied.
 The dictionary of newly created variables and their business purpose.
 
 ⭐ **Technical Best Practices Implemented**
+
 Dynamic Traceability: The generated report is not static; it feeds directly from the processed data of that specific execution, guaranteeing absolute accuracy.
 
 Clean Code & Modularity: Clean functions with single responsibilities (generate_error_report, set_run_font), facilitating maintenance and scalability.
@@ -83,6 +89,7 @@ Clean Code & Modularity: Clean functions with single responsibilities (generate_
 Exception Handling: A robust try-except structure to catch runtime errors and prevent unexpected program crashes.
 
 ⚙️ **Installation and Usage Instructions**
+
 Install the required dependencies:
 
 Bash
